@@ -9,54 +9,50 @@ import { Modal } from './Modal/Modal';
 
 export class App extends Component {
   state = {
+    query: '',
     page: 1,
     images: [],
-    query: '',
     isLoading: false,
-    btnShow: false,
     isModalShow: false,
-    modalImage: null,
+    modalImg: null,
   };
 
-  totalResults = null;
+  totalHits = null;
 
-  componentDidUpdate(_, prevState) {
-    const { page, images, query } = this.state;
-    if (page !== prevState.page || query !== prevState.query) {
+  async componentDidUpdate(_, prevState) {
+    const { query, page } = this.state;
+    if (query !== prevState.query || page !== prevState.page) {
       this.setState({ isLoading: true });
       try {
-        getImages(query, page).then(res => {
-          this.setState({
-            images: [...images, ...res.hits],
-            isLoading: false,
-          });
-          this.totalResults = res.totalHits;
+        const { totalHits, hits } = await getImages(query, page);
+        this.totalHits = totalHits;
+        if (page === 1) {
+          this.setState({ query, images: [...hits], isLoading: false });
+          return;
+        }
+        this.setState({
+          query,
+          totalHits,
+          images: [...this.state.images, ...hits],
+          isLoading: false,
         });
       } catch (error) {
         this.setState({ isLoading: false });
+        return alert('Oops, something went wrong');
       }
     }
   }
 
-  handleSubmit = query => {
-    try {
-      this.setState({ isLoading: true });
-      getImages(query, 1).then(res => {
-        this.setState({ page: 1, query: query });
-      });
-    } catch (error) {
-      console.log(error);
-    }
+  handleSearch = query => {
+    this.setState({ query, page: 1 });
   };
 
-  handleLoadMore = () => {
-    this.setState({ page: this.state.page + 1 });
+  loadMore = () => {
+    this.setState(prevState => ({ page: prevState.page + 1 }));
   };
 
-  handleModalOpen = evt => {
-    const imageId = evt.target.closest('li').id;
-    const modalImage = this.state.images.find(el => el.id === +imageId);
-    this.setState({ isModalShow: true, modalImage });
+  handleModalOpen = modalImg => {
+    this.setState({ isModalShow: true, modalImg });
   };
 
   handleModalClose = () => {
@@ -64,25 +60,17 @@ export class App extends Component {
   };
 
   render() {
-    const { images, isLoading, isModalShow, modalImage } = this.state;
-
+    const { images, page, isLoading, isModalShow, modalImg } = this.state;
+    const limitPage = this.totalHits > 0 && page < Math.ceil(this.totalHits / 12);
     return (
       <DivElem>
-        <SearchBar onSubmit={this.handleSubmit} />
+        <SearchBar onSubmit={this.handleSearch} />
         {isLoading && <Loader />}
-        {images.length > 0 ? (
-          <ImageGallery images={images} modalOpen={this.handleModalOpen} />
-        ) : (
-          false
-        )}
-        {this.state.page < Math.ceil(this.totalResults / 12) && (
-          <Button onLoadMore={this.handleLoadMore} />
-        )}
+        {this.totalHits === 0 && <p>Sorry, we didn't found pictures for this query</p>}
+        <ImageGallery images={images} modalOpen={this.handleModalOpen} />
+        {limitPage && <Button onLoadMore={this.loadMore} />}
         {isModalShow && (
-          <Modal
-            image={modalImage}
-            onModalClose={this.handleModalClose}
-          ></Modal>
+          <Modal onModalClose={this.handleModalClose} image={modalImg} />
         )}
       </DivElem>
     );

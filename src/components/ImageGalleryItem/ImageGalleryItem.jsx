@@ -1,9 +1,9 @@
 import PropTypes from 'prop-types';
 
 export const ImageGalleryItem = ({ image }) => {
-  const { webformatURL, tags, id } = image;
+  const { webformatURL, tags,largeImageURL } = image;
   return (
-    <li id={id}>
+    <li id={largeImageURL}>
       <img src={webformatURL} alt={tags} />
     </li>
   );
