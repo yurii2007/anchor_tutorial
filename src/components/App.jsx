@@ -24,19 +24,10 @@ export class App extends Component {
       this.setState({ isLoading: true });
       try {
         const { totalHits, hits } = await getImages(query, page);
-        if (page === 1) {
-          this.setState({
-            query,
+          this.setState(prevState => ({
             isLoadMore: totalHits > 0 && page < Math.ceil(totalHits / 12),
-            images: [...hits],
-          });
-          return;
-        }
-        this.setState({
-          query,
-          images: [...this.state.images, ...hits],
-          isLoadMore: totalHits > 0 && page < Math.ceil(totalHits / 12),
-        });
+            images: [...prevState.images,...hits],
+          }));
       } catch (error) {
         return alert('Oops, something went wrong');
       } finally {
@@ -48,7 +39,7 @@ export class App extends Component {
   }
 
   handleSearch = query => {
-    this.setState({ query, page: 1 });
+    this.setState({ query, page: 1,images: [] });
   };
 
   loadMore = () => {
