@@ -1,9 +1,14 @@
 import PropTypes from 'prop-types';
 
-export const ImageGalleryItem = ({ image }) => {
-  const { webformatURL, tags,largeImageURL } = image;
+export const ImageGalleryItem = ({ image, modalOpen }) => {
+  const { webformatURL, tags, largeImageURL } = image;
+  const modalObject = { img: largeImageURL, tags: tags };
   return (
-    <li id={largeImageURL}>
+    <li
+      onClick={() => {
+        modalOpen(modalObject);
+      }}
+    >
       <img src={webformatURL} alt={tags} />
     </li>
   );
@@ -11,4 +16,5 @@ export const ImageGalleryItem = ({ image }) => {
 
 ImageGalleryItem.propTypes = {
   image: PropTypes.object.isRequired,
+  modalOpen: PropTypes.func.isRequired,
 };

@@ -12,10 +12,6 @@ export async function getImages(query, page = 1) {
     image_type: 'photo',
     orientation: 'horizontal',
   });
-  try {
     const result = await axios.get(`?${params}`);
     return result.data;
-  } catch (error) {
-    return error.message;
-  }
 }

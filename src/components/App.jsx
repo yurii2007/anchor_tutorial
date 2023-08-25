@@ -1,5 +1,5 @@
 import { Component } from 'react';
-import { getImages } from './helpers/pixabay-api';
+import { getImages } from '../helpers/pixabay-api';
 import { SearchBar } from './SearchBar/SearchBar';
 import { ImageGallery } from './ImageGallery/ImageGallery';
 import { Button } from './Button/Button';
@@ -15,9 +15,8 @@ export class App extends Component {
     isLoading: false,
     isModalShow: false,
     modalImg: null,
+    isLoadMore: false,
   };
-
-  totalHits = null;
 
   async componentDidUpdate(_, prevState) {
     const { query, page } = this.state;
@@ -25,20 +24,25 @@ export class App extends Component {
       this.setState({ isLoading: true });
       try {
         const { totalHits, hits } = await getImages(query, page);
-        this.totalHits = totalHits;
         if (page === 1) {
-          this.setState({ query, images: [...hits], isLoading: false });
+          this.setState({
+            query,
+            isLoadMore: totalHits > 0 && page < Math.ceil(totalHits / 12),
+            images: [...hits],
+          });
           return;
         }
         this.setState({
           query,
-          totalHits,
           images: [...this.state.images, ...hits],
-          isLoading: false,
+          isLoadMore: totalHits > 0 && page < Math.ceil(totalHits / 12),
         });
       } catch (error) {
-        this.setState({ isLoading: false });
         return alert('Oops, something went wrong');
+      } finally {
+        this.setState({
+          isLoading: false,
+        });
       }
     }
   }
@@ -60,15 +64,16 @@ export class App extends Component {
   };
 
   render() {
-    const { images, page, isLoading, isModalShow, modalImg } = this.state;
-    const limitPage = this.totalHits > 0 && page < Math.ceil(this.totalHits / 12);
+    const { images, isLoading, isModalShow, modalImg, isLoadMore,query } = this.state;
     return (
       <DivElem>
         <SearchBar onSubmit={this.handleSearch} />
         {isLoading && <Loader />}
-        {this.totalHits === 0 && <p>Sorry, we didn't found pictures for this query</p>}
+        {(images.length === 0 && query) && (
+          <p>Sorry, we didn't found pictures for this query</p>
+        )}
         <ImageGallery images={images} modalOpen={this.handleModalOpen} />
-        {limitPage && <Button onLoadMore={this.loadMore} />}
+        {isLoadMore && <Button onLoadMore={this.loadMore} />}
         {isModalShow && (
           <Modal onModalClose={this.handleModalClose} image={modalImg} />
         )}
